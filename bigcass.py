@@ -52,20 +52,25 @@ def get_conn(conf):
 		conf.conn[thd] = conf.driver(user, apikey, region=conf.region)
 	return conf.conn[thd]
 
-def get_nodes(conf):
+def get_nodes(conf, role=None):
 
-	cass = [InstanceInfo('cass', conf, "%s-cass-%d" % (conf.prefix, i),
-				conf.cass.flavor, conf.cass.image)
-						 for i in range(0, conf.cass.count)]
+	nodes = []
 
-	loader = [InstanceInfo('loader',conf, "%s-load-%d" % (conf.prefix, i),
-				conf.loader.flavor, conf.loader.image)
-						 for i in range(0, conf.loader.count)]
-	cass.extend(loader)
-	return cass
+	if role is None or role == "cass":
+		cass = [InstanceInfo('cass', conf, "%s-cass-%d" % (conf.prefix, i),
+					conf.cass.flavor, conf.cass.image)
+							 for i in range(0, conf.cass.count)]
+		nodes.extend(cass)
 
-def get_node_names(conf):
-	nodes = get_nodes(conf)
+	if role is None or role == "loader":
+		loader = [InstanceInfo('loader',conf, "%s-load-%d" % (conf.prefix, i),
+					conf.loader.flavor, conf.loader.image)
+							 for i in range(0, conf.loader.count)]
+		nodes.extend(loader)
+	return nodes
+
+def get_node_names(conf, role=None):
+	nodes = get_nodes(conf, role)
 	names = [n.name for n in nodes]
 	return sorted(names)
 
@@ -132,15 +137,22 @@ def get_cloud_config(conf, instance):
 	ystr = "#cloud-config\n" + ystr
 	return ystr
 
-def status(conf):
+def get_running_lcnodes(conf, role=None):
 	conn = get_conn(conf)
-	expected = get_node_names(conf)
+	expected = get_node_names(conf, role)
 	nodes = conn.list_nodes()
 	found = []
-	pt = PrettyTable(['state', 'uuid', 'name', 'public_ip', 'private_ip'])
 	for n in nodes:
 		if n.name in expected:
-			pt.add_row([n.state, n.uuid, n.name, n.public_ips, n.private_ips])
+			found.append(n)
+	return found
+
+def status(conf):
+	expected = get_node_names(conf)
+	nodes = get_running_lcnodes(conf)
+	pt = PrettyTable(['state', 'uuid', 'name', 'public_ip', 'private_ip'])
+	for n in nodes:
+		pt.add_row([n.state, n.uuid, n.name, n.public_ips, n.private_ips])
 	nodenames = [n.name for n in nodes]
 	missing = set(expected) - set(nodenames)
 	for m in missing:
@@ -204,6 +216,71 @@ def create_nodes(conf):
 
 	print pt
 
+def get_benchcmd(conf, host, targets, mode):
+	cmdline = [
+		'ssh',
+			'-o', 'StrictHostKeyChecking=no',
+			'-o', 'UserKnownHostsFile=/dev/null',
+			'core@' + host,
+			'sudo'
+			'/usr/bin/systemd-nspawn',
+				'-D',
+				'/opt/cassandra',
+                '--share-system',
+                '--capability=all',
+                '--bind=/dev:/dev',
+                '--bind=/dev/pts:/dev/pts',
+                '--bind=/proc:/proc',
+             	'/opt/cassandra/tools/bin/cassandra-stress',
+	]
+
+	if mode == 'keyspace':
+		stresscmd = [
+			'--send-to',
+			'127.0.0.1',
+			'--nodes',
+			','.join(targets),
+			'--replication-factor',
+			str(conf.bench_replication_factor),
+			'--consistency-level',
+			str(conf.bench_consistency_level),
+			'--num-keys',
+			'1'
+		]
+		cmdline.extend(stresscmd)
+	else:
+		stresscmd = [
+			'--send-to',
+			'127.0.0.1',
+			'--file',
+			host + '.results',
+			'--nodes',
+			','.join(targets),
+			'--replication-factor',
+			str(conf.bench_replication_factor),
+			'--consistency-level',
+			str(conf.bench_consistency_level),
+			'--num-keys',
+			str(conf.bench_num_keys),
+			'-K',
+			str(conf.bench_retries),
+			'-t',
+			str(conf.bench_threads),
+		]
+		cmdline.extend(stresscmd)
+
+	return cmdline
+
+def benchmark(conf):
+	loaders = get_running_lcnodes(conf, role='loader')
+	cass = get_running_lcnodes(conf, role='cass')
+	cassips = [c.private_ips[0] for c in cass]
+	cmd = get_benchcmd(conf, loaders[0].public_ips[0], cassips, None)
+	print cmd
+	print ''
+	print ' '.join(cmd)
+
+
 class InstanceInfo(object):
 	def __init__(self, role, conf, name, flavor, image):
 		self.role = role
@@ -239,14 +316,18 @@ class Config(object):
 		self.keyname = 'pquerna'
 		self.conn = {}
 		self.driver = None
-		pass
+		# TODO add argsparse:
+		self.bench_replication_factor = 3
+		self.bench_consistency_level = 'quorum'
+		self.bench_threads = 600
+		self.bench_retries = 100
+		self.bench_num_keys = 1000000
 
 def main():
-
 	parser = argparse.ArgumentParser(description='Cassandra Cluster Benchmark Manager')
 	parser.add_argument('mode', metavar='mode', type=str,
                    help='mode to operate in.', nargs=1,
-                   choices=['status', 'create', 'bootstrap', 'runbench', 'destroy'])
+                   choices=['status', 'create', 'bootstrap', 'benchmark', 'destroy'])
 
 	parser.add_argument('--image', metavar='UUID', type=str,
                    help='base image to use',
@@ -279,6 +360,7 @@ def main():
 	conf = Config(args)
 	cmds = {
 		'status': status,
+		'benchmark': benchmark,
 	 	'create': create_nodes,
 	 	'destroy': delete_nodes,
 	}
