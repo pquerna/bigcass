@@ -1,0 +1,31 @@
+#!/bin/bash -e
+#
+# TODO: improve this.
+#
+
+MACHINE_ID=${1}
+[ -z "$MACHINE_ID" ] && echo "error; machine ID should be passed in" && exit 1
+
+GFILE="/etc/${MACHINE_ID}.raid-setup"
+if [ -e "${GFILE}" ]
+then
+  echo "${GFILE} exists, raid already setup?"
+exit 1
+fi
+
+if [ -b "/dev/md0" ]
+then
+  mdadm --stop /dev/md0
+fi
+
+BLOCKS=""
+for blockdev in `/opt/bin/lsi-cards-list`
+do
+  BLOCKS="${BLOCKS} /dev/${blockdev}"
+done
+
+/bin/yes | mdadm --create --verbose -f /dev/md0 --level=stripe --raid-devices=2 ${BLOCKS}
+
+mkfs.ext4 /dev/md0
+
+touch /etc/${MACHINE_ID}.raid-setup

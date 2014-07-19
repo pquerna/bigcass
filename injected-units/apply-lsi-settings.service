@@ -1,0 +1,7 @@
+[Unit]
+Description=Apply sysfs settings to any LSI NWD-BLP4-1600 cards present.
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/bin/lsi-cards-apply-settings

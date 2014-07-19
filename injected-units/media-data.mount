@@ -1,0 +1,8 @@
+[Unit]
+Description=Mount /media/data
+ConditionPathExists=/etc/%m.raid-setup
+
+[Mount]
+What=/dev/md0
+Where=/media/data
+Type=ext4

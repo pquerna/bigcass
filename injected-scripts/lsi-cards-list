@@ -1,0 +1,5 @@
+#!/bin/bash -e
+#
+# TODO: improve this.
+#
+lsblk -S | grep NWD-BLP4-1600 | awk '{print $1}'

@@ -1,0 +1,7 @@
+[Unit]
+ConditionPathExists=!/etc/%m.raid-setup
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/bin/lsi-cards-make-raid0 %m

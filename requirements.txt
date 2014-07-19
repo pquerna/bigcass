@@ -1,0 +1,4 @@
+apache-libcloud
+futures
+prettytable
+pyyaml

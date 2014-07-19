@@ -1,0 +1,13 @@
+#!/bin/bash -e
+#
+# TODO: improve this.
+#
+for blockdev in `/opt/bin/lsi-cards-list`
+do
+  echo "Applying SSD settings to ${blockdev}"
+  echo noop | tee /sys/block/${blockdev}/queue/scheduler
+  echo 4096 | tee /sys/block/${blockdev}/queue/nr_requests
+  echo 1024 | tee /sys/block/${blockdev}/queue/max_sectors_kb
+  echo 1 | tee /sys/block/${blockdev}/queue/nomerges
+  echo 512 | tee /sys/block/${blockdev}/device/queue_depth
+done
