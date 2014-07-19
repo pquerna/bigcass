@@ -1,21 +1,20 @@
 [Unit]
-Description=Cassandra Server
-After=media-data.mount cassandra-container-creation.service
-Requires=media-data.mount cassandra-container-creation.service
+Description=Cassandra Stress Server
+After=cassandra-container-creation.service
+Requires=cassandra-container-creation.service
 
 [Service]
-ExecStart=mkdir -p /media/data/cassandra
-ExecStart=/opt/bin/cassandra-config-file /opt/cassandra/opt/cassandra/conf/cassandra.yaml
+Type=forking
+PIDFile=/opt/cassandra/stressd.pid
 ExecStart=/usr/bin/systemd-nspawn -D /opt/cassandra \
                               --share-system \
                               --capability=all \
                               --bind=/dev:/dev \
                               --bind=/dev/pts:/dev/pts \
                               --bind=/proc:/proc \
-                              --bind=/media/data/cassandra:/var/lib/cassandra \
                               --user=root \
                               --keep-unit \
-                              /opt/cassandra/bin/cassandra -f
+                              /opt/cassandra/tools/bin/cassandra-stressd start -h 127.0.0.1
 
 Restart=always
 RestartSec=30s
