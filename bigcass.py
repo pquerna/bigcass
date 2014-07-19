@@ -97,6 +97,8 @@ def get_units_for_node(conf, instance):
 
 	if instance.role == 'cass':
 		units.append('cassandra-server.service')
+	if instance.role == 'loader':
+		units.append('cassandra-stressd.service')
 
 	# TODO: stress container service
 	return units
