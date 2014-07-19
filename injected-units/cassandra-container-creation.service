@@ -1,4 +1,5 @@
 [Unit]
+After=ntpd.service
 Description=Untar Cassandra Container
 
 [Service]
