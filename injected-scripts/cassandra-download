@@ -12,7 +12,7 @@ mkdir -p /opt/downloads
 
 cd /opt/downloads
 
-wget --dot-style=mega -O cassandra-${CASS_VERSION}.tar.gz ${SOURCE_URL}
+wget --progress=dot:mega -O cassandra-${CASS_VERSION}.tar.gz ${SOURCE_URL}
 
 echo "${CASS_SHA1} cassandra-${CASS_VERSION}.tar.gz" | ${SHA1CMD}
 
