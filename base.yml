@@ -10,6 +10,6 @@ coreos:
     # peer-addr: $private_ipv4:7001
   units:
     - name: etcd.service
-      command: start
+      command: stop
     - name: fleet.service
-      command: start
+      command: stop

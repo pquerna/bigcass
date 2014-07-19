@@ -6,3 +6,4 @@ ConditionPathExists=/etc/%m.raid-setup
 What=/dev/md0
 Where=/media/data
 Type=ext4
+Options=noatime,discard

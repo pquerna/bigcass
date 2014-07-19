@@ -1,5 +1,6 @@
 [Unit]
-After=multi-user.target media-data.mount
+After=media-data.mount
+Requires=media-data.mount
 Description=Untar Cassandra Container
 
 [Service]
