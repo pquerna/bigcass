@@ -1,6 +1,4 @@
 [Unit]
-After=multi-user.target
-Requires=multi-user.target
 Description=Untar Cassandra Container
 
 [Service]
