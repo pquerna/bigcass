@@ -1,7 +1,7 @@
 [Unit]
 Description=Cassandra Server
-After=cassandra-container-creation.service
-Requires=cassandra-container-creation.service
+After=media-data.mount cassandra-container-creation.service
+Requires=media-data.mount cassandra-container-creation.service
 
 [Service]
 ExecStart=/usr/bin/systemd-nspawn -D /opt/cassandra \
