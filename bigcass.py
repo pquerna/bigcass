@@ -92,6 +92,13 @@ def get_units_for_node(conf, instance):
 		units.append('setup-lsi-cards-in-raid0.service')
 		units.append('media-data.mount')
 
+	# both loader and server want the container created.
+	units.append('cassandra-container-creation.service')
+
+	if instance.role == 'cass':
+		units.append('cassandra-server.service')
+
+	# TODO: stress container service
 	return units
 
 

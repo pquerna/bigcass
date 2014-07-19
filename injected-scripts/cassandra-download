@@ -1,0 +1,26 @@
+#!/bin/bash -e
+#
+
+CASS_VERSION="8e1d3f7d6022"
+CASS_SHA1="fe8949f7241455db4e9b0ae8489c578bdc801ec4"
+
+SOURCE_URL="https://d33392e1596de12c6fef-9d8258b458e255860c9909a594624191.ssl.cf5.rackcdn.com/cassandra-${CASS_VERSION}.tar.gz"
+
+SHA1CMD="sha1sum --strict --check -"
+
+mkdir -p /opt/downloads
+
+cd /opt/downloads
+
+wget --dot-style=mega -O cassandra-${CASS_VERSION}.tar.gz ${SOURCE_URL}
+
+echo "${CASS_SHA1} cassandra-${CASS_VERSION}.tar.gz" | ${SHA1CMD}
+
+RV=$?
+
+if (($RV > 0)); then
+	echo "SHA1 of cassandra-${CASS_VERSION}.tar.gz failed validation"
+	exit ${RV}
+fi
+
+ln -nsf cassandra-${CASS_VERSION}.tar.gz cassandra-container.tar.gz

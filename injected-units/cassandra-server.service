@@ -1,0 +1,19 @@
+[Unit]
+Description=Cassandra Server
+After=cassandra-container-creation.service
+Requires=cassandra-container-creation.service
+
+[Service]
+ExecStart=/usr/bin/systemd-nspawn -D /opt/cassandra \
+                              --share-system \
+                              --capability=all \
+                              --bind=/dev:/dev \
+                              --bind=/dev/pts:/dev/pts \
+                              --bind=/proc:/proc \
+                              --bind=/media/data:/data \
+                              --user=root \
+                              --keep-unit \
+                              /opt/cassandra/bin/cassandra -f
+
+Restart=always
+RestartSec=30s

@@ -1,0 +1,13 @@
+[Unit]
+After=multi-user.target media-data.mount
+Description=Untar Cassandra Container
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/bin/cassandra-download
+ExecStart=/usr/bin/mkdir -p /opt/cassandra
+ExecStart=/usr/bin/tar -x \
+       -C /opt/cassandra \
+       -f /opt/downloads/cassandra-container.tar.gz
+ExecStart=/usr/bin/systemd-machine-id-setup --root=/opt/cassandra/

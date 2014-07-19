@@ -1,14 +1,13 @@
 #cloud-config
 
-# https://d33392e1596de12c6fef-9d8258b458e255860c9909a594624191.ssl.cf5.rackcdn.com/cassandra-8e1d3f7d6022.tar.gz
-
 coreos:
   etcd:
     # generate a new token for each unique cluster from https://discovery.etcd.io/new
     discovery: https://discovery.etcd.io/7d125dd35ecb9acbe97c15c3c7532e65
     # multi-region and multi-cloud deployments need to use $public_ipv4
-    addr: $private_ipv4:4001
-    peer-addr: $private_ipv4:7001
+    # TDOO: broken on onmetal images right now.
+    # addr: $private_ipv4:4001
+    # peer-addr: $private_ipv4:7001
   units:
     - name: etcd.service
       command: start
