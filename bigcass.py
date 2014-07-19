@@ -173,7 +173,7 @@ def delete_nodes(conf):
 	print pt
 
 def create_node(conf, ni):
-	print 'booting node: %s' % ni.name
+	print 'booting node: %s flavor=%s' % (ni.name, ni.flavor)
 	size = ni.asLibcloudSize()
 	image = ni.asLibcloudImage()
 	conn = get_conn(conf)
@@ -231,7 +231,7 @@ class Config(object):
 		# TODO: figure out stuff.
 		self.image = args.image
 		self.cass = InstanceConfig(args.cassandra_count, args.cassandra_flavor, self.image)
-		self.loader = InstanceConfig(args.loader_count, args.cassandra_flavor, self.image)
+		self.loader = InstanceConfig(args.loader_count, args.loader_flavor, self.image)
 		self.region = args.region
 		self.prefix = 'pq'
 		self.keyname = 'pquerna'
