@@ -11,4 +11,5 @@ ExecStart=/usr/bin/mkdir -p /opt/cassandra
 ExecStart=/usr/bin/tar -x \
        -C /opt/cassandra \
        -f /opt/downloads/cassandra-container.tar.gz
+ExecStart=/bin/bash -c 'echo "127.0.0.1 `hostname`" >> /opt/cassandra/etc/hosts'
 ExecStart=/usr/bin/systemd-machine-id-setup --root=/opt/cassandra/
