@@ -283,6 +283,32 @@ def run_cmd(conf, loader, cmd):
 	print '%s: %s' % (loader.name, ' '.join(cmd))
 	return subprocess.check_output(cmd)
 
+def sshtest(conf):
+	nodes = get_running_lcnodes(conf)
+
+
+	pt = PrettyTable(['name', 'status', 'detail'])
+	with futures.ThreadPoolExecutor(max_workers=len(nodes)) as e:
+		returns = {}
+		for node in nodes:
+			cmd = [
+				'ssh',
+					'-o', 'StrictHostKeyChecking=no',
+					'-o', 'UserKnownHostsFile=/dev/null',
+					'core@' + node.public_ips[0],
+					'uptime'
+			]
+			returns[node.name] = e.submit(run_cmd, conf, node, cmd)
+
+		for key in returns.keys():
+			try:
+				n = returns[key].result()
+				pt.add_row([key, 'OK', n.strip()])
+			except Exception as exc:
+				traceback.print_exc(file=sys.stdout)
+				pt.add_row([key, 'EXCEPTION', str(exc)])
+	print pt.get_string(sortby="status")
+
 def benchmark(conf):
 	loaders = get_running_lcnodes(conf, role='loader')
 	cass = get_running_lcnodes(conf, role='cass')
@@ -360,7 +386,7 @@ def main():
 	parser = argparse.ArgumentParser(description='Cassandra Cluster Benchmark Manager')
 	parser.add_argument('mode', metavar='mode', type=str,
                    help='mode to operate in.', nargs=1,
-                   choices=['status', 'create', 'bootstrap', 'benchmark', 'destroy'])
+                   choices=['status', 'create', 'sshtest', 'benchmark', 'destroy'])
 
 	parser.add_argument('--image', metavar='UUID', type=str,
                    help='base image to use',
@@ -394,6 +420,7 @@ def main():
 	cmds = {
 		'status': status,
 		'benchmark': benchmark,
+		'sshtest': sshtest,
 	 	'create': create_nodes,
 	 	'destroy': delete_nodes,
 	}
