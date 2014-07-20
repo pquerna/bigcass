@@ -3,13 +3,17 @@
 
 import os
 import sys
-from ConfigParser import SafeConfigParser
-import futures
+import subprocess
+import time
 import traceback
+
+from ConfigParser import SafeConfigParser
 from threading import current_thread
 
+import futures
 import argparse
 from prettytable import PrettyTable
+
 import yaml
 from yaml.representer import SafeRepresenter
 
@@ -172,6 +176,7 @@ def delete_nodes(conf):
 	for n in conn.list_nodes():
 		if n.name in names:
 			todelete.append(n)
+
 	pt = PrettyTable(['delete-success', 'uuid', 'name'])
 	with futures.ThreadPoolExecutor(max_workers=CONCURRENCY) as e:
 		returns = []
@@ -216,13 +221,14 @@ def create_nodes(conf):
 
 	print pt
 
-def get_benchcmd(conf, host, targets, mode):
+def get_benchcmd(conf, loader, targets, mode):
+	host = loader.public_ips[0]
 	cmdline = [
 		'ssh',
 			'-o', 'StrictHostKeyChecking=no',
 			'-o', 'UserKnownHostsFile=/dev/null',
 			'core@' + host,
-			'sudo'
+			'sudo',
 			'/usr/bin/systemd-nspawn',
 				'-D',
 				'/opt/cassandra',
@@ -236,8 +242,10 @@ def get_benchcmd(conf, host, targets, mode):
 
 	if mode == 'keyspace':
 		stresscmd = [
-			'--send-to',
-			'127.0.0.1',
+# Stress --send-to is BROKEN: https://issues.apache.org/jira/browse/CASSANDRA-5978
+#  So, just run it in non-daemon mode for now :(  
+#			'--send-to',
+#			'127.0.0.1',
 			'--nodes',
 			','.join(targets),
 			'--replication-factor',
@@ -250,10 +258,10 @@ def get_benchcmd(conf, host, targets, mode):
 		cmdline.extend(stresscmd)
 	else:
 		stresscmd = [
-			'--send-to',
-			'127.0.0.1',
+#			'--send-to',
+#			'127.0.0.1',
 			'--file',
-			host + '.results',
+			loader.name + '.results',
 			'--nodes',
 			','.join(targets),
 			'--replication-factor',
@@ -271,15 +279,39 @@ def get_benchcmd(conf, host, targets, mode):
 
 	return cmdline
 
+def run_cmd(conf, loader, cmd):
+	print '%s: %s' % (loader.name, ' '.join(cmd))
+	return subprocess.check_output(cmd)
+
 def benchmark(conf):
 	loaders = get_running_lcnodes(conf, role='loader')
 	cass = get_running_lcnodes(conf, role='cass')
 	cassips = [c.private_ips[0] for c in cass]
-	cmd = get_benchcmd(conf, loaders[0].public_ips[0], cassips, None)
-	print cmd
-	print ''
-	print ' '.join(cmd)
 
+	print 'Running with keys=1 to establish keyspace....'
+	cmd = get_benchcmd(conf, loaders[0], cassips, 'keyspace')
+	run_cmd(conf, loaders[0], cmd)
+	print 'Sleeping for 5 seconds, just because.'
+	time.sleep(5)
+	print 'Done!'
+	print ''
+
+	pt = PrettyTable(['name', 'status', 'detail'])
+
+	with futures.ThreadPoolExecutor(max_workers=len(loaders)) as e:
+		returns = {}
+		for loader in loaders:
+			cmd = get_benchcmd(conf, loader, cassips, 'benchmark')
+			returns[loader.name] = e.submit(run_cmd, conf, loader, cmd)
+
+		for key in returns.keys():
+			try:
+				n = returns[key].result()
+				pt.add_row([key, 'OK', ''])
+			except Exception as exc:
+				traceback.print_exc(file=sys.stdout)
+				pt.add_row([key, 'EXCEPTION', str(exc)])
+	print pt
 
 class InstanceInfo(object):
 	def __init__(self, role, conf, name, flavor, image):
@@ -321,7 +353,8 @@ class Config(object):
 		self.bench_consistency_level = 'quorum'
 		self.bench_threads = 600
 		self.bench_retries = 100
-		self.bench_num_keys = 1000000
+		self.bench_num_keys = 30000000
+#		self.bench_num_keys = 1
 
 def main():
 	parser = argparse.ArgumentParser(description='Cassandra Cluster Benchmark Manager')
