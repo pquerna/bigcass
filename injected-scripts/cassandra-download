@@ -24,3 +24,12 @@ if (($RV > 0)); then
 fi
 
 ln -nsf cassandra-${CASS_VERSION}.tar.gz cassandra-container.tar.gz
+
+mkdir -p /opt/cassandra
+
+/usr/bin/tar -x \
+       -C /opt/cassandra \
+       -f /opt/downloads/cassandra-container.tar.gz
+
+echo "127.0.0.1 `hostname`" >> /opt/cassandra/etc/hosts
+

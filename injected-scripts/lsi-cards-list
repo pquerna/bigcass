@@ -2,4 +2,4 @@
 #
 # TODO: improve this.
 #
-lsblk -S | grep NWD-BLP4-1600 | awk '{print $1}'
+lsblk -i -o KNAME,MODEL | grep NWD-BLP4-1600 | awk '{print $1}'

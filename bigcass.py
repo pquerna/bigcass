@@ -109,8 +109,35 @@ def get_units_for_node(conf, instance):
 	if instance.role == 'loader':
 		units.append('cassandra-stressd.service')
 
-	# TODO: stress container service
 	return units
+
+
+def get_runcmd_for_node(conf, instance):
+	cmds = []
+
+	# both loader and server want the cassandra data
+	cmds.append('/opt/bin/cassandra-download')
+	cmds.append('/opt/bin/oracle-java-install')
+
+	# TODO: make easier to extend
+	if instance.flavor == 'onmetal-io1':
+		cmds.append('/opt/bin/lsi-cards-apply-settings')
+		cmds.append(['/opt/bin/lsi-cards-make-raid0', instance.name])
+		cmds.append('/opt/bin/debian-mount-md0')
+
+	cmds.append('/opt/bin/cassandra-docker-import')
+
+	if instance.role == 'cass':
+		# TODO: sysv init?
+		cmds.append('/opt/bin/debian-start-cassandra')
+		pass
+
+	if instance.role == 'loader':
+		# units.append('cassandra-stressd.service')
+		pass
+
+	return cmds
+
 
 
 def get_cloud_config(conf, instance):
@@ -126,14 +153,32 @@ def get_cloud_config(conf, instance):
 		}
 		cc['write_files'].append(fobj)
 
-	injectunits = get_units_for_node(conf, instance)
-	for unit in injectunits:
-		uobj = {
-			'name': unit,
-			'command': 'start',
-			'content': file_contents(os.path.join(INJECT_UNITS_DIR, unit))
-		}
-		cc['coreos']['units'].append(uobj)
+	osimg = os_flavor(instance.image)
+	if osimg == 'coreos':
+		injectunits = get_units_for_node(conf, instance)
+		for unit in injectunits:
+			uobj = {
+				'name': unit,
+				'command': 'start',
+				'content': file_contents(os.path.join(INJECT_UNITS_DIR, unit))
+			}
+			cc['coreos']['units'].append(uobj)
+
+	if osimg == 'debian':
+		cc['apt_upgrade'] = True
+		cc['apt_sources'] = [
+			{
+				'source': 'deb http://ppa.launchpad.net/webupd8team/java/ubuntu precise main',
+			 	'key': file_contents(os.path.join(BASE_DIR, 'public-keys', 'webupd8team-java.gpg')),
+			 }
+		]
+
+		cc['packages'] = [
+			'mdadm',
+			'docker.io',
+		]
+
+		cc['runcmd'] = get_runcmd_for_node(conf, instance)
 
 	# TODO: consider repersentation hacks in http://stackoverflow.com/a/20863889
 	ystr = yaml.safe_dump(cc,
@@ -154,9 +199,9 @@ def get_running_lcnodes(conf, role=None):
 def status(conf):
 	expected = get_node_names(conf)
 	nodes = get_running_lcnodes(conf)
-	pt = PrettyTable(['state', 'uuid', 'name', 'public_ip', 'private_ip'])
+	pt = PrettyTable(['state', 'id', 'name', 'public_ip', 'private_ip'])
 	for n in nodes:
-		pt.add_row([n.state, n.uuid, n.name, n.public_ips, n.private_ips])
+		pt.add_row([n.state, n.id, n.name, n.public_ips, n.private_ips])
 	nodenames = [n.name for n in nodes]
 	missing = set(expected) - set(nodenames)
 	for m in missing:
@@ -206,7 +251,7 @@ def create_node(conf, ni):
 
 def create_nodes(conf):
 	toboot = get_missing_nodes(conf)
-	pt = PrettyTable(['state', 'uuid', 'name', 'public_ip', 'private_ip'])
+	pt = PrettyTable(['state', 'id', 'name', 'public_ip', 'private_ip'])
 	with futures.ThreadPoolExecutor(max_workers=CONCURRENCY) as e:
 		returns = []
 		for ni in toboot:
@@ -214,7 +259,7 @@ def create_nodes(conf):
 		for rv in returns:
 			try:
 				n = rv.result()
-				pt.add_row([n.state, n.uuid, n.name, n.public_ips, n.private_ips])
+				pt.add_row([n.state, n.id, n.name, n.public_ips, n.private_ips])
 			except Exception as exc:
 				traceback.print_exc(file=sys.stdout)
 				pt.add_row(['EXCEPTION', '', str(exc), '', ''])
@@ -284,7 +329,7 @@ def run_cmd(conf, loader, cmd):
 	return subprocess.check_output(cmd)
 
 def sshtest(conf):
-	nodes = get_running_lcnodes(conf)
+	nodes = get_running_lcnodes(conf, role='loader')
 
 
 	pt = PrettyTable(['name', 'status', 'detail'])
@@ -295,8 +340,8 @@ def sshtest(conf):
 				'ssh',
 					'-o', 'StrictHostKeyChecking=no',
 					'-o', 'UserKnownHostsFile=/dev/null',
-					'core@' + node.public_ips[0],
-					'uptime'
+					'root@' + node.public_ips[0],
+					'cat', '/sys/devices/virtual/net/bond0/bonding/mode'
 			]
 			returns[node.name] = e.submit(run_cmd, conf, node, cmd)
 
@@ -411,6 +456,16 @@ class Config(object):
 		self.bench_num_keys = 30000000
 #		self.bench_num_keys = 1
 
+def os_flavor(image):
+	# TODO: this is horrible
+	m = {
+		'0372e576-873d-4a21-8466-d60232fa341c': 'coreos', # CoreOS - VM
+		'53047266-698a-4a34-8076-bfc9915593d2': 'coreos', # CoreOS - OnMetal
+		'd695bd29-fd35-4281-9a7e-9c47735e6534': 'coreos', # CoreOS - OnMetal - newer
+		'bc5afff1-1d0c-4cc5-ba7b-01c0a74c2fbd': 'debian', # Debian - Jessie
+	}
+	return m[image]
+
 def main():
 	parser = argparse.ArgumentParser(description='Cassandra Cluster Benchmark Manager')
 	parser.add_argument('mode', metavar='mode', type=str,
@@ -423,7 +478,10 @@ def main():
                    #   0372e576-873d-4a21-8466-d60232fa341c
                    # New CoreOS - OnMetal:
                    #   53047266-698a-4a34-8076-bfc9915593d2
-                   default='53047266-698a-4a34-8076-bfc9915593d2')
+                   # New New CoreOS - OnMetal:
+                   #   d695bd29-fd35-4281-9a7e-9c47735e6534
+                   # Debian jessie: bc5afff1-1d0c-4cc5-ba7b-01c0a74c2fbd
+                   default='bc5afff1-1d0c-4cc5-ba7b-01c0a74c2fbd')
 
 	parser.add_argument('--cassandra-count', metavar='N', type=int,
                    help='number of cassandra instances.', default=1)

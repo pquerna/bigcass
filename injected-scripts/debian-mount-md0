@@ -1,0 +1,9 @@
+#!/bin/bash -e
+
+mkdir -p /media/data
+
+echo "/dev/md0 /media/data ext4 noatime,errors=remount-ro 0 1" | tee -a /etc/fstab
+
+mount /dev/md0
+
+mkdir -p /media/data/cassandra

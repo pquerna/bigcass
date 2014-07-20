@@ -1,0 +1,12 @@
+#!/bin/bash -e
+#
+# TODO: improve this.
+#
+
+umount -f /media/data
+
+for blockdev in `/opt/bin/lsi-cards-list`
+do
+	dd if=/dev/zero of=/dev/${blockdev} bs=1M count=1024
+done
+

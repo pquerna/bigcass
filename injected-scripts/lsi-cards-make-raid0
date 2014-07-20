@@ -24,7 +24,7 @@ do
   BLOCKS="${BLOCKS} /dev/${blockdev}"
 done
 
-/bin/yes | mdadm --create --verbose -f /dev/md0 --level=stripe --raid-devices=2 ${BLOCKS}
+yes | mdadm --create --verbose -f /dev/md0 --level=stripe --raid-devices=2 ${BLOCKS}
 
 mkfs.ext4 /dev/md0
 
