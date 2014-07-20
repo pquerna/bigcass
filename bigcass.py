@@ -115,6 +115,8 @@ def get_units_for_node(conf, instance):
 def get_runcmd_for_node(conf, instance):
 	cmds = []
 
+	cmds.append('/opt/bin/debian-increase-limits')
+	cmds.append(['service', 'docker.io', 'restart'])
 	# both loader and server want the cassandra data
 	cmds.append('/opt/bin/cassandra-download')
 	cmds.append('/opt/bin/oracle-java-install')
@@ -409,7 +411,7 @@ def getresults(conf):
 def benchmark(conf):
 	loaders = get_running_lcnodes(conf, role='loader')
 	cass = get_running_lcnodes(conf, role='cass')
-	cassips = [c.private_ips[0] for c in cass]
+	cassips = [c.private_ips[-1] for c in cass]
 
 	print 'Running with keys=1 to establish keyspace....'
 	cmd = get_benchcmd(conf, loaders[0], cassips, 'keyspace')

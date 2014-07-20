@@ -1,0 +1,18 @@
+#!/bin/bash -e
+
+# http://www.datastax.com/documentation/cassandra/2.0/cassandra/install/installRecommendSettings.html
+
+echo '*      -   nofile   100000' | tee -a /etc/security/limits.conf
+echo 'root   -   nofile   100000' | tee -a /etc/security/limits.conf
+
+
+echo '*      -   memlock  unlimited' | tee -a /etc/security/limits.conf
+echo 'root   -   memlock  unlimited' | tee -a /etc/security/limits.conf
+
+echo '*      -   nproc  32768' | tee -a /etc/security/limits.conf
+echo 'root   -   nproc  32768' | tee -a /etc/security/limits.conf
+
+
+echo '*      -   as  unlimited' | tee -a /etc/security/limits.conf
+echo 'root   -   as  unlimited' | tee -a /etc/security/limits.conf
+
