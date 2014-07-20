@@ -27,7 +27,7 @@ ln -nsf cassandra-${CASS_VERSION}.tar.gz cassandra-container.tar.gz
 
 mkdir -p /opt/cassandra
 
-/usr/bin/tar -x \
+tar -x \
        -C /opt/cassandra \
        -f /opt/downloads/cassandra-container.tar.gz
 

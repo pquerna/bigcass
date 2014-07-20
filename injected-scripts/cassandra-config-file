@@ -10,7 +10,9 @@ CONCURRENT_WRITES=40
 CLUSTER_NAME=bigcass1
 # TODO: this sucks
 INTERNAL_IP=$(ifconfig bond0.401 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
+# TODO: find a better way to distribute seeds
 SEEDS="${INTERNAL_IP}"
+# SEEDS="10.184.11.55"
 
 [ -z "$CONF_FILE" ] && echo "error; path to write configuration should be passed in" && exit 1
 

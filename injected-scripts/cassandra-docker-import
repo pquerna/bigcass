@@ -2,4 +2,5 @@
 
 cat /opt/downloads/cassandra-container.tar.gz | docker import - cassandra
 
-# docker run -i -t --net=host --privileged=true cassandra /bin/bash -i
+# docker run --name=cassandra-server -d  -i -t --net=host --privileged=true --volume=/media/data/cassandra:/var/lib/cassandra cassandra /opt/cassandra/bin/cassandra -f
+

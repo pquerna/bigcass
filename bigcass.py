@@ -176,6 +176,8 @@ def get_cloud_config(conf, instance):
 		cc['packages'] = [
 			'mdadm',
 			'docker.io',
+			'sysstat',
+			'nload',
 		]
 
 		cc['runcmd'] = get_runcmd_for_node(conf, instance)
@@ -267,13 +269,21 @@ def create_nodes(conf):
 	print pt
 
 def get_benchcmd(conf, loader, targets, mode):
-	host = loader.public_ips[0]
+	host = loader.public_ips[-1]
+
 	cmdline = [
 		'ssh',
 			'-o', 'StrictHostKeyChecking=no',
 			'-o', 'UserKnownHostsFile=/dev/null',
-			'core@' + host,
-			'sudo',
+			'root@' + host,
+			'sudo'
+	]
+
+	# TODO: wish there was a better way.
+	osimg = os_flavor(conf.loader.image)
+
+	if osimg == 'coreos':
+		cmdline.extend([
 			'/usr/bin/systemd-nspawn',
 				'-D',
 				'/opt/cassandra',
@@ -283,7 +293,20 @@ def get_benchcmd(conf, loader, targets, mode):
                 '--bind=/dev/pts:/dev/pts',
                 '--bind=/proc:/proc',
              	'/opt/cassandra/tools/bin/cassandra-stress',
-	]
+			])
+	else:
+		cmdline.extend([
+			'docker',
+				'run',
+				'-i',
+				'-t',
+				'--net=host',
+				'--privileged=true',
+				'--volume=/media/data/cassandra:/var/lib/cassandra',
+				'--volume=/media/data/cassandra-conf:/opt/cassandra/conf',
+                'cassandra',
+             	'/opt/cassandra/tools/bin/cassandra-stress',
+			])
 
 	if mode == 'keyspace':
 		stresscmd = [
@@ -306,7 +329,7 @@ def get_benchcmd(conf, loader, targets, mode):
 #			'--send-to',
 #			'127.0.0.1',
 			'--file',
-			loader.name + '.results',
+			'/var/lib/cassandra/' + loader.name + '.results',
 			'--nodes',
 			','.join(targets),
 			'--replication-factor',
@@ -329,7 +352,7 @@ def run_cmd(conf, loader, cmd):
 	return subprocess.check_output(cmd)
 
 def sshtest(conf):
-	nodes = get_running_lcnodes(conf, role='loader')
+	nodes = get_running_lcnodes(conf)
 
 
 	pt = PrettyTable(['name', 'status', 'detail'])
@@ -340,8 +363,8 @@ def sshtest(conf):
 				'ssh',
 					'-o', 'StrictHostKeyChecking=no',
 					'-o', 'UserKnownHostsFile=/dev/null',
-					'root@' + node.public_ips[0],
-					'cat', '/sys/devices/virtual/net/bond0/bonding/mode'
+					'root@' + node.public_ips[-1],
+					'uptime',
 			]
 			returns[node.name] = e.submit(run_cmd, conf, node, cmd)
 
@@ -361,12 +384,12 @@ def getresults(conf):
 	with futures.ThreadPoolExecutor(max_workers=len(loaders)) as e:
 		returns = {}
 		for loader in loaders:
-			fname = '/opt/cassandra/' + loader.name + '.results'
+			fname = '/media/data/cassandra/' + loader.name + '.results'
 			cmd = [
 				'ssh',
 					'-o', 'StrictHostKeyChecking=no',
 					'-o', 'UserKnownHostsFile=/dev/null',
-					'core@' + loader.public_ips[0],
+					'root@' + loader.public_ips[-1],
 					'cat', fname
 			]
 
@@ -451,9 +474,9 @@ class Config(object):
 		# TODO add argsparse:
 		self.bench_replication_factor = 3
 		self.bench_consistency_level = 'quorum'
-		self.bench_threads = 600
+		self.bench_threads = 2000
 		self.bench_retries = 100
-		self.bench_num_keys = 30000000
+		self.bench_num_keys = 90000000
 #		self.bench_num_keys = 1
 
 def os_flavor(image):
