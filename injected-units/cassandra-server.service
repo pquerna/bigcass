@@ -4,7 +4,7 @@ After=media-data.mount cassandra-container-creation.service
 Requires=media-data.mount cassandra-container-creation.service
 
 [Service]
-ExecStart=mkdir -p /media/data/cassandra
+ExecStart=/usr/bin/mkdir -p /media/data/cassandra
 ExecStart=/opt/bin/cassandra-config-file /opt/cassandra/opt/cassandra/conf/cassandra.yaml
 ExecStart=/usr/bin/systemd-nspawn -D /opt/cassandra \
                               --share-system \
