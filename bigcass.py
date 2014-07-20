@@ -309,6 +309,35 @@ def sshtest(conf):
 				pt.add_row([key, 'EXCEPTION', str(exc)])
 	print pt.get_string(sortby="status")
 
+def getresults(conf):
+	loaders = get_running_lcnodes(conf, role='loader')
+	pt = PrettyTable(['name', 'status', 'detail'])
+
+	with futures.ThreadPoolExecutor(max_workers=len(loaders)) as e:
+		returns = {}
+		for loader in loaders:
+			fname = '/opt/cassandra/' + loader.name + '.results'
+			cmd = [
+				'ssh',
+					'-o', 'StrictHostKeyChecking=no',
+					'-o', 'UserKnownHostsFile=/dev/null',
+					'core@' + loader.public_ips[0],
+					'cat', fname
+			]
+
+			returns[loader.name] = e.submit(run_cmd, conf, loader, cmd)
+
+		for key in returns.keys():
+			try:
+				n = returns[key].result()
+				pt.add_row([key, 'OK', ''])
+				with open(key + '.results', 'w') as fp:
+					fp.write(n)
+			except Exception as exc:
+				traceback.print_exc(file=sys.stdout)
+				pt.add_row([key, 'EXCEPTION', str(exc)])
+	print pt
+
 def benchmark(conf):
 	loaders = get_running_lcnodes(conf, role='loader')
 	cass = get_running_lcnodes(conf, role='cass')
@@ -386,7 +415,7 @@ def main():
 	parser = argparse.ArgumentParser(description='Cassandra Cluster Benchmark Manager')
 	parser.add_argument('mode', metavar='mode', type=str,
                    help='mode to operate in.', nargs=1,
-                   choices=['status', 'create', 'sshtest', 'benchmark', 'destroy'])
+                   choices=['status', 'create', 'sshtest', 'benchmark', 'results', 'destroy'])
 
 	parser.add_argument('--image', metavar='UUID', type=str,
                    help='base image to use',
@@ -420,6 +449,7 @@ def main():
 	cmds = {
 		'status': status,
 		'benchmark': benchmark,
+		'results': getresults,
 		'sshtest': sshtest,
 	 	'create': create_nodes,
 	 	'destroy': delete_nodes,
