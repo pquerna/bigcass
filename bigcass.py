@@ -297,7 +297,7 @@ def get_benchcmd(conf, loader, targets, mode):
                 '--bind=/proc:/proc',
              	'/opt/cassandra/tools/bin/cassandra-stress',
 			])
-	else:
+	elif osimg == 'docker-bogus':
 		cmdline.extend([
 			'docker',
 				'run',
@@ -310,6 +310,10 @@ def get_benchcmd(conf, loader, targets, mode):
                 'cassandra',
              	'/opt/cassandra/tools/bin/cassandra-stress',
 			])
+	else:
+		cmdline.extend([
+         	'/opt/cassandra/opt/cassandra/tools/bin/cassandra-stress',
+		])
 
 	if mode == 'keyspace':
 		stresscmd = [
@@ -332,7 +336,7 @@ def get_benchcmd(conf, loader, targets, mode):
 #			'--send-to',
 #			'127.0.0.1',
 			'--file',
-			'/var/lib/cassandra/' + loader.name + '.results',
+			'/' + loader.name + '.results',
 			'--nodes',
 			','.join(targets),
 			'--replication-factor',
