@@ -16,3 +16,10 @@ echo 'root   -   nproc  32768' | tee -a /etc/security/limits.conf
 echo '*      -   as  unlimited' | tee -a /etc/security/limits.conf
 echo 'root   -   as  unlimited' | tee -a /etc/security/limits.conf
 
+echo 'vm.max_map_count = 131072' | tee -a /etc/sysctl.conf
+
+sysctl -p
+
+# reset limits when using sudo -- so now a sudo command to restart docker.io
+# gets the new limits.
+echo 'session    required   pam_limits.so' | tee -a /etc/pam.d/sudo
