@@ -20,6 +20,12 @@ echo 'vm.max_map_count = 131072' | tee -a /etc/sysctl.conf
 
 sysctl -p
 
+service ntp stop
+
+ntpdate time.rackspace.com
+
+service ntp start
+
 # reset limits when using sudo -- so now a sudo command to restart docker.io
 # gets the new limits.
 echo 'session    required   pam_limits.so' | tee -a /etc/pam.d/sudo

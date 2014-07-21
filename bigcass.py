@@ -115,6 +115,7 @@ def get_units_for_node(conf, instance):
 def get_runcmd_for_node(conf, instance):
 	cmds = []
 
+	cmds.append('/opt/bin/debian-time-sync')
 	cmds.append('/opt/bin/debian-increase-limits')
 	# both loader and server want the cassandra data
 	cmds.append('/opt/bin/cassandra-download')
@@ -177,6 +178,8 @@ def get_cloud_config(conf, instance):
 		]
 
 		cc['packages'] = [
+			'ntpdate',
+			'ntp',
 			'mdadm',
 			'docker.io',
 			'sysstat',
@@ -336,7 +339,7 @@ def get_benchcmd(conf, loader, targets, mode):
 #			'--send-to',
 #			'127.0.0.1',
 			'--file',
-			'/' + loader.name + '.results',
+			'/' + loader.name + '.results2',
 			'--nodes',
 			','.join(targets),
 			'--replication-factor',
@@ -391,7 +394,7 @@ def getresults(conf):
 	with futures.ThreadPoolExecutor(max_workers=len(loaders)) as e:
 		returns = {}
 		for loader in loaders:
-			fname = '/media/data/cassandra/' + loader.name + '.results'
+			fname = '/' + loader.name + '.results2'
 			cmd = [
 				'ssh',
 					'-o', 'StrictHostKeyChecking=no',
@@ -479,11 +482,12 @@ class Config(object):
 		self.conn = {}
 		self.driver = None
 		# TODO add argsparse:
-		self.bench_replication_factor = 3
+		self.bench_replication_factor = 1
 		self.bench_consistency_level = 'quorum'
-		self.bench_threads = 2000
+		self.bench_consistency_level = 'one'
+		self.bench_threads = 500
 		self.bench_retries = 100
-		self.bench_num_keys = 90000000
+		self.bench_num_keys = 1500000
 #		self.bench_num_keys = 1
 
 def os_flavor(image):

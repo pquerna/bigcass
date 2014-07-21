@@ -5,14 +5,14 @@ CONF_FILE=${1}
 
 # TODO: template in bigcass.py?
 DATA_PATH=/var/lib/cassandra
-CONCURRENT_READS=128
-CONCURRENT_WRITES=40
+CONCURRENT_READS=256
+CONCURRENT_WRITES=256
 CLUSTER_NAME=bigcass1
 # TODO: this sucks
 INTERNAL_IP=$(ifconfig bond0.401 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
 # TODO: find a better way to distribute seeds
 SEEDS="${INTERNAL_IP}"
-SEEDS="10.184.11.154"
+SEEDS="10.184.11.218"
 
 [ -z "$CONF_FILE" ] && echo "error; path to write configuration should be passed in" && exit 1
 
@@ -39,15 +39,15 @@ row_cache_save_period: 0
 saved_caches_directory: ${DATA_PATH}/saved_caches
 commitlog_sync: periodic
 commitlog_sync_period_in_ms: 10000
-commitlog_segment_size_in_mb: 32
+commitlog_segment_size_in_mb: 1024
 seed_provider:
     - class_name: org.apache.cassandra.locator.SimpleSeedProvider
       parameters:
           - seeds: "${SEEDS}"
 concurrent_reads: ${CONCURRENT_READS}
 concurrent_writes: ${CONCURRENT_WRITES}
-commitlog_total_space_in_mb: 4096
-memtable_flush_writers: 4
+commitlog_total_space_in_mb: 16096
+memtable_flush_writers: 8
 memtable_flush_queue_size: 4
 trickle_fsync: true
 trickle_fsync_interval_in_kb: 10240
@@ -66,9 +66,10 @@ incremental_backups: false
 snapshot_before_compaction: false
 auto_snapshot: true
 column_index_size_in_kb: 64
-in_memory_compaction_limit_in_mb: 64
+in_memory_compaction_limit_in_mb: 128
 multithreaded_compaction: false
-compaction_throughput_mb_per_sec: 16
+compaction_throughput_mb_per_sec: 0
+stream_throughput_outbound_megabits_per_sec: 0
 compaction_preheat_key_cache: true
 read_request_timeout_in_ms: 10000
 range_request_timeout_in_ms: 10000
