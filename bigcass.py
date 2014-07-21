@@ -116,7 +116,6 @@ def get_runcmd_for_node(conf, instance):
 	cmds = []
 
 	cmds.append('/opt/bin/debian-increase-limits')
-	cmds.append(['service', 'docker.io', 'restart'])
 	# both loader and server want the cassandra data
 	cmds.append('/opt/bin/cassandra-download')
 	cmds.append('/opt/bin/oracle-java-install')
@@ -129,6 +128,8 @@ def get_runcmd_for_node(conf, instance):
 
 	cmds.append('/opt/bin/cassandra-docker-import')
 
+	# ran using sudo so new limits.conf applies.
+	cmds.append(['sudo', '-i', 'service', 'docker.io', 'restart'])
 	if instance.role == 'cass':
 		# TODO: sysv init?
 		cmds.append('/opt/bin/debian-start-cassandra')
