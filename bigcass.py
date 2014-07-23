@@ -424,8 +424,8 @@ def benchmark(conf):
 	print 'Running with keys=1 to establish keyspace....'
 	cmd = get_benchcmd(conf, loaders[0], cassips, 'keyspace')
 	run_cmd(conf, loaders[0], cmd)
-	print 'Sleeping for 5 seconds, just because.'
-	time.sleep(5)
+	print 'Sleeping for 20 seconds to allow keyspace propogation.'
+	time.sleep(20)
 	print 'Done!'
 	print ''
 

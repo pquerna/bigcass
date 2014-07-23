@@ -1,0 +1,9 @@
+#!/bin/bash -e
+
+# http://www.datastax.com/documentation/cassandra/2.0/cassandra/install/installRecommendSettings.html
+
+# All of the limits are increased via systemd service file for cassandra-server.service
+
+echo 'vm.max_map_count = 131072' | tee -a /etc/sysctl.d/max_map_count.conf
+systemctl restart systemd-sysctl.service
+injected-scripts/debian-increase-limits

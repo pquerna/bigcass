@@ -6,5 +6,6 @@ Description=Untar Cassandra Container
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecStart=/opt/bin/coreos-increase-limits
 ExecStart=/opt/bin/cassandra-download
 ExecStart=/usr/bin/systemd-machine-id-setup --root=/opt/cassandra/
