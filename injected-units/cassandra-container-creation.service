@@ -1,6 +1,6 @@
 [Unit]
-After=ntpd.service network-online.target
-Requires=ntpd.service
+After=network-online.target
+Requires=ntpd.service network-online.target
 Description=Untar Cassandra Container
 
 [Service]

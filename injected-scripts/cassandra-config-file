@@ -6,13 +6,17 @@ CONF_FILE=${1}
 # TODO: template in bigcass.py?
 DATA_PATH=/var/lib/cassandra
 CONCURRENT_READS=256
-CONCURRENT_WRITES=256
+CONCURRENT_WRITES=320
 CLUSTER_NAME=bigcass1
-# TODO: this sucks
+# TODO: this really sucks
 INTERNAL_IP=$(ifconfig bond0.401 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
+if [[ -z "$INTERNAL_IP" ]]; then
+   export INTERNAL_IP=$(ifconfig  bond0.401 | grep 'inet ' | awk '{ print $2}')
+fi
+
 # TODO: find a better way to distribute seeds
 SEEDS="${INTERNAL_IP}"
-SEEDS="10.184.11.218"
+#SEEDS="10.184.11.218"
 
 [ -z "$CONF_FILE" ] && echo "error; path to write configuration should be passed in" && exit 1
 
