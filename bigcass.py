@@ -281,7 +281,7 @@ def get_benchcmd(conf, loader, targets, mode):
 		'ssh',
 			'-o', 'StrictHostKeyChecking=no',
 			'-o', 'UserKnownHostsFile=/dev/null',
-			'root@' + host,
+			os_login(conf.loader.image) + '@' + host,
 			'sudo'
 	]
 
@@ -373,7 +373,7 @@ def sshtest(conf):
 				'ssh',
 					'-o', 'StrictHostKeyChecking=no',
 					'-o', 'UserKnownHostsFile=/dev/null',
-					'root@' + node.public_ips[-1],
+					os_login(conf.loader.image) + '@' + node.public_ips[-1],
 					'uptime',
 			]
 			returns[node.name] = e.submit(run_cmd, conf, node, cmd)
@@ -399,7 +399,7 @@ def getresults(conf):
 				'ssh',
 					'-o', 'StrictHostKeyChecking=no',
 					'-o', 'UserKnownHostsFile=/dev/null',
-					'root@' + loader.public_ips[-1],
+					os_login(conf.loader.image) + '@' + loader.public_ips[-1],
 					'cat', fname
 			]
 
@@ -494,11 +494,18 @@ def os_flavor(image):
 	# TODO: this is horrible
 	m = {
 		'0372e576-873d-4a21-8466-d60232fa341c': 'coreos', # CoreOS - VM
-		'53047266-698a-4a34-8076-bfc9915593d2': 'coreos', # CoreOS - OnMetal
-		'd695bd29-fd35-4281-9a7e-9c47735e6534': 'coreos', # CoreOS - OnMetal - newer
+		'be25b5fd-4ed5-4297-a37a-b886b3546821': 'coreos', # CoreOS - OnMetal
 		'bc5afff1-1d0c-4cc5-ba7b-01c0a74c2fbd': 'debian', # Debian - Jessie
 	}
 	return m[image]
+
+def os_login(image):
+	osf = os_flavor(image)
+	l = {
+		'coreos': 'core',
+		'debian': 'root',
+	}
+	return l[osf]
 
 def main():
 	parser = argparse.ArgumentParser(description='Cassandra Cluster Benchmark Manager')
@@ -510,12 +517,10 @@ def main():
                    help='base image to use',
                    # CoreOS - VM:
                    #   0372e576-873d-4a21-8466-d60232fa341c
-                   # New CoreOS - OnMetal:
-                   #   53047266-698a-4a34-8076-bfc9915593d2
-                   # New New CoreOS - OnMetal:
-                   #   d695bd29-fd35-4281-9a7e-9c47735e6534
+                   # CoreOS - OnMetal:
+                   #   be25b5fd-4ed5-4297-a37a-b886b3546821
                    # Debian jessie: bc5afff1-1d0c-4cc5-ba7b-01c0a74c2fbd
-                   default='bc5afff1-1d0c-4cc5-ba7b-01c0a74c2fbd')
+                   default='be25b5fd-4ed5-4297-a37a-b886b3546821')
 
 	parser.add_argument('--cassandra-count', metavar='N', type=int,
                    help='number of cassandra instances.', default=1)
