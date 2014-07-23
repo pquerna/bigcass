@@ -484,7 +484,7 @@ class Config(object):
 		# TODO add argsparse:
 		self.bench_replication_factor = 1
 		self.bench_consistency_level = 'quorum'
-		self.bench_consistency_level = 'one'
+#		self.bench_consistency_level = 'one'
 		self.bench_threads = 500
 		self.bench_retries = 100
 		self.bench_num_keys = 1500000
