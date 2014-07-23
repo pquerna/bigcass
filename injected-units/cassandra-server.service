@@ -4,6 +4,10 @@ After=media-data.mount cassandra-container-creation.service
 Requires=media-data.mount cassandra-container-creation.service
 
 [Service]
+LimitNOFILE=100000
+LimitAS=unlimited
+LimitNPROC=32768
+LimitMEMLOCK=unlimited
 ExecStartPre=/usr/bin/mkdir -p /media/data/cassandra
 ExecStartPre=/opt/bin/cassandra-config-file /opt/cassandra/opt/cassandra/conf/cassandra.yaml
 ExecStart=/usr/bin/systemd-nspawn -D /opt/cassandra \
