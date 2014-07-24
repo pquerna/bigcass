@@ -6,3 +6,6 @@
 
 echo 'vm.max_map_count = 131072' | tee -a /etc/sysctl.d/max_map_count.conf
 systemctl restart systemd-sysctl.service
+
+echo '0' > /proc/sys/kernel/nmi_watchdog
+

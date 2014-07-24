@@ -16,7 +16,7 @@ fi
 
 # TODO: find a better way to distribute seeds
 SEEDS="${INTERNAL_IP}"
-#SEEDS="10.184.11.218"
+SEEDS="10.184.13.44"
 
 [ -z "$CONF_FILE" ] && echo "error; path to write configuration should be passed in" && exit 1
 
