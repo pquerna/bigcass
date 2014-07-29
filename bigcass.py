@@ -96,6 +96,8 @@ def get_units_for_node(conf, instance):
 	units = []
 
 	# TODO: make easier to extend
+	units.append('coreos-onmetal-env.service')
+
 	if instance.flavor == 'onmetal-io1':
 		units.append('apply-lsi-settings.service')
 		units.append('setup-lsi-cards-in-raid0.service')
