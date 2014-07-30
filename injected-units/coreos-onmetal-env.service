@@ -5,3 +5,5 @@ Description=Apply IP data to /etc/enviroment for OnMetal
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/opt/bin/coreos-setup-onmetal-environment /etc/environment
+ExecStart=/opt/bin/coreos-fixup-etcd-unit
+
