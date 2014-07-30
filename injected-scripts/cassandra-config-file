@@ -14,9 +14,30 @@ if [[ -z "$INTERNAL_IP" ]]; then
    export INTERNAL_IP=$(ifconfig  bond0.401 | grep 'inet ' | awk '{ print $2}')
 fi
 
-# TODO: find a better way to distribute seeds
-SEEDS="${INTERNAL_IP}"
-SEEDS="10.184.13.44"
+
+# TODO: have multiple seeds
+function get_seeds () {
+  MYIP=$1
+  IP=
+  set +e
+  while [ 1 ]; do
+    IP=$(etcdctl get /cassandra-leader)
+    if [ "$IP" != "" ]; then
+      break
+    fi
+    IP=$(etcdctl mk /cassandra-leader $MYIP)
+    rv=$?
+    if [ $rv -eq 0 ]; then
+      break
+    fi
+    sleep .1
+  done
+  set -e
+  echo $IP  
+}
+
+
+SEEDS=$(get_seeds ${INTERNAL_IP})
 
 [ -z "$CONF_FILE" ] && echo "error; path to write configuration should be passed in" && exit 1
 
