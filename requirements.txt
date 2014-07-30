@@ -2,3 +2,4 @@ apache-libcloud
 futures
 prettytable
 pyyaml
+requests

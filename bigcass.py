@@ -10,6 +10,7 @@ import traceback
 from ConfigParser import SafeConfigParser
 from threading import current_thread
 
+import requests
 import futures
 import argparse
 from prettytable import PrettyTable
@@ -169,6 +170,7 @@ def get_cloud_config(conf, instance):
 				'content': file_contents(os.path.join(INJECT_UNITS_DIR, unit))
 			}
 			cc['coreos']['units'].append(uobj)
+		cc['coreos']['etcd']['discovery'] = conf.getDiscoveryUrl()
 
 	if osimg == 'debian':
 		cc['apt_upgrade'] = True
@@ -260,6 +262,10 @@ def create_node(conf, ni):
 	return node
 
 def create_nodes(conf):
+	osimg = os_flavor(conf.loader.image)
+	if osimg == 'coreos':
+		print 'etcd discovery url: %s' % (conf.getDiscoveryUrl())
+
 	toboot = get_missing_nodes(conf)
 	pt = PrettyTable(['state', 'id', 'name', 'public_ip', 'private_ip'])
 	with futures.ThreadPoolExecutor(max_workers=CONCURRENCY) as e:
@@ -479,6 +485,7 @@ class Config(object):
 		self.cass = InstanceConfig(args.cassandra_count, args.cassandra_flavor, self.image)
 		self.loader = InstanceConfig(args.loader_count, args.loader_flavor, self.image)
 		self.region = args.region
+		self.discovery_url = args.discovery_url
 		self.prefix = 'pq'
 		self.keyname = 'pquerna'
 		self.conn = {}
@@ -491,6 +498,14 @@ class Config(object):
 		self.bench_retries = 100
 		self.bench_num_keys = 1500000
 #		self.bench_num_keys = 1
+
+	def getDiscoveryUrl(self):
+		if len(self.discovery_url) > 0:
+			return self.discovery_url
+
+		r = requests.get('https://discovery.etcd.io/new')
+		self.discovery_url = r.text.strip()
+		return self.discovery_url
 
 def os_flavor(image):
 	# TODO: this is horrible
@@ -541,6 +556,9 @@ def main():
 
 	parser.add_argument('--region', metavar='region', type=str,
                    help='Region to run in', default='iad')
+
+	parser.add_argument('--discovery-url', metavar='url', type=str,
+                   help='etcd discovery url', default='')
 
 	args = parser.parse_args()
 
