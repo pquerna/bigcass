@@ -3,13 +3,12 @@
 coreos:
   etcd:
     # generate a new token for each unique cluster from https://discovery.etcd.io/new
-    discovery: https://discovery.etcd.io/7d125dd35ecb9acbe97c15c3c7532e65
+    discovery: https://discovery.etcd.io/9812c0a211a02e8ae255fb54a3b0b313
     # multi-region and multi-cloud deployments need to use $public_ipv4
-    # TDOO: broken on onmetal images right now.
-    # addr: $private_ipv4:4001
-    # peer-addr: $private_ipv4:7001
+    addr: $private_ipv4:4001
+    peer-addr: $private_ipv4:7001
   units:
     - name: etcd.service
-      command: stop
+      command: start
     - name: fleet.service
-      command: stop
+      command: start

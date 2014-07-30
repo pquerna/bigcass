@@ -4,4 +4,4 @@ Description=Apply IP data to /etc/enviroment for OnMetal
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/opt/bin/coreos-setup-onmetal-environment
+ExecStart=/opt/bin/coreos-setup-onmetal-environment /etc/environment
