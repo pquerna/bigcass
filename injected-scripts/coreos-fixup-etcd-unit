@@ -2,6 +2,8 @@
 
 source /etc/environment
 
+mkdir -p /etc/systemd/system/etcd.service.d
+
 cat > /etc/systemd/system/etcd.service.d/30-onmetal.conf <<EOF
 [Service]
 Environment="ETCD_ADDR=${COREOS_PRIVATE_IPV4}:4001"
