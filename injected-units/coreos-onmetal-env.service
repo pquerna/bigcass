@@ -1,5 +1,7 @@
 [Unit]
 Description=Apply IP data to /etc/enviroment for OnMetal
+After=network-online.target
+Requires=ntpd.service network-online.target
 
 [Service]
 Type=oneshot
