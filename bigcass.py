@@ -356,8 +356,7 @@ def get_benchcmd(conf, loader, targets, mode):
 			str(conf.bench_consistency_level),
 			'--num-keys',
 			str(conf.bench_num_keys),
-			'-K',
-			str(conf.bench_retries),
+			'-k',
 			'-t',
 			str(conf.bench_threads),
 		]
@@ -402,7 +401,7 @@ def getresults(conf):
 	with futures.ThreadPoolExecutor(max_workers=len(loaders)) as e:
 		returns = {}
 		for loader in loaders:
-			fname = '/' + loader.name + '.results2'
+			fname = '/opt/cassandra/' + loader.name + '.results2'
 			cmd = [
 				'ssh',
 					'-o', 'StrictHostKeyChecking=no',
@@ -491,13 +490,10 @@ class Config(object):
 		self.conn = {}
 		self.driver = None
 		# TODO add argsparse:
-		self.bench_replication_factor = 1
+		self.bench_replication_factor = 3
 		self.bench_consistency_level = 'quorum'
-#		self.bench_consistency_level = 'one'
-		self.bench_threads = 500
-		self.bench_retries = 100
-		self.bench_num_keys = 1500000
-#		self.bench_num_keys = 1
+		self.bench_threads = 120
+		self.bench_num_keys = 1000000000
 
 	def getDiscoveryUrl(self):
 		if len(self.discovery_url) > 0:
