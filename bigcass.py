@@ -492,7 +492,7 @@ class Config(object):
 		# TODO add argsparse:
 		self.bench_replication_factor = 3
 		self.bench_consistency_level = 'quorum'
-		self.bench_threads = 120
+		self.bench_threads = 600
 		self.bench_num_keys = 1000000000
 
 	def getDiscoveryUrl(self):
