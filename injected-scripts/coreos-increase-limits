@@ -9,3 +9,8 @@ systemctl restart systemd-sysctl.service
 
 echo '0' > /proc/sys/kernel/nmi_watchdog
 
+systemctl stop ntpd.service
+
+ntpdate time.rackspace.com
+
+systemctl start ntpd.service

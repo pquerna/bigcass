@@ -509,6 +509,7 @@ def os_flavor(image):
 		'0372e576-873d-4a21-8466-d60232fa341c': 'coreos', # CoreOS - VM
 		'be25b5fd-4ed5-4297-a37a-b886b3546821': 'coreos', # CoreOS - OnMetal
 		'64b92981-69c6-4e8a-828b-4a20a8db9adc': 'coreos',
+		'c75cc3ad-3a55-446c-802f-082cac581e6b': 'coreos',
 		'bc5afff1-1d0c-4cc5-ba7b-01c0a74c2fbd': 'debian', # Debian - Jessie
 	}
 	return m[image]
@@ -534,7 +535,7 @@ def main():
                    # CoreOS - OnMetal:
                    #   64b92981-69c6-4e8a-828b-4a20a8db9adc
                    # Debian jessie: bc5afff1-1d0c-4cc5-ba7b-01c0a74c2fbd
-                   default='64b92981-69c6-4e8a-828b-4a20a8db9adc')
+                   default='c75cc3ad-3a55-446c-802f-082cac581e6b')
 
 	parser.add_argument('--cassandra-count', metavar='N', type=int,
                    help='number of cassandra instances.', default=1)
